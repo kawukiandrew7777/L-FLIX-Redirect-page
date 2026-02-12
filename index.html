@@ -4,6 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>L-FLIX Payment</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -36,10 +37,6 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
-        .status {
-            font-size: 18px;
-            margin: 20px 0;
-        }
         .hidden {
             display: none;
         }
@@ -53,44 +50,77 @@
     </div>
 
     <script>
-        // Get Telegram WebApp
-        const telegram = window.Telegram?.WebApp;
+        // Initialize Telegram WebApp
+        const tg = window.Telegram?.WebApp;
         
         // Get URL parameters
         const urlParams = new URLSearchParams(window.location.search);
         const redirectUrl = urlParams.get('url');
         const txRef = urlParams.get('tx_ref');
         
+        console.log('Redirect URL:', redirectUrl);
+        console.log('TX Ref:', txRef);
+        
+        const statusEl = document.getElementById('status');
+        const loaderEl = document.getElementById('loader');
+        
         // Function to close WebApp
         function closeWebApp() {
-            if (telegram) {
-                telegram.close();
+            console.log('Closing WebApp...');
+            if (tg) {
+                tg.close();
             } else {
                 window.close();
             }
         }
 
-        // Check if this is a return from successful payment
-        if (window.location.href.includes('payment_success') || 
-            document.referrer.includes('flutterwave')) {
-            // Auto-close after 1 second (silent)
-            setTimeout(closeWebApp, 1000);
+        // Check if we're returning from Flutterwave
+        function checkForReturn() {
+            // If URL has payment_success or we came from Flutterwave
+            if (window.location.href.includes('payment_success') || 
+                document.referrer.includes('flutterwave') ||
+                window.location.search.includes('success')) {
+                
+                statusEl.innerText = '✅ Payment successful! Closing...';
+                loaderEl.classList.add('hidden');
+                
+                // Close after 1 second
+                setTimeout(closeWebApp, 1000);
+                return true;
+            }
+            return false;
         }
-        // If we have a redirect URL, proceed with payment
-        else if (redirectUrl) {
-            document.getElementById('status').innerText = 'Redirecting to payment gateway...';
-            
-            // Redirect after 2 seconds
-            setTimeout(() => {
-                window.location.href = redirectUrl;
-            }, 2000);
-        } else {
-            document.getElementById('status').innerText = '❌ Error: No payment URL found';
-            document.getElementById('loader').classList.add('hidden');
-            
-            // Close after 3 seconds on error
-            setTimeout(closeWebApp, 3000);
+
+        // Check immediately
+        if (!checkForReturn()) {
+            // If we have a redirect URL, proceed with payment
+            if (redirectUrl) {
+                statusEl.innerText = 'Redirecting to payment gateway...';
+                
+                // Store that we're processing
+                if (txRef) {
+                    localStorage.setItem('pending_payment', txRef);
+                }
+                
+                // Redirect after 2 seconds
+                setTimeout(() => {
+                    window.location.href = redirectUrl;
+                }, 2000);
+            } else {
+                statusEl.innerText = '❌ Error: No payment URL found';
+                loaderEl.classList.add('hidden');
+                
+                // Close after 3 seconds on error
+                setTimeout(closeWebApp, 3000);
+            }
         }
+
+        // Also check when page becomes visible (user returns from Flutterwave)
+        document.addEventListener('visibilitychange', function() {
+            if (!document.hidden) {
+                checkForReturn();
+            }
+        });
     </script>
 </body>
 </html>
