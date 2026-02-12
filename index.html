@@ -15,50 +15,170 @@
             height: 100vh;
             margin: 0;
             text-align: center;
+            padding: 20px;
         }
         .container {
             background: rgba(255,255,255,0.1);
             backdrop-filter: blur(10px);
-            padding: 30px;
+            padding: 40px;
             border-radius: 20px;
-            max-width: 400px;
+            max-width: 500px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+        }
+        h2 {
+            margin-top: 0;
+            font-size: 28px;
         }
         .loader {
             border: 5px solid rgba(255,255,255,0.3);
             border-top: 5px solid white;
             border-radius: 50%;
-            width: 50px;
-            height: 50px;
+            width: 60px;
+            height: 60px;
             animation: spin 1s linear infinite;
-            margin: 20px auto;
+            margin: 30px auto;
         }
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+        .status {
+            font-size: 18px;
+            margin: 20px 0;
+            line-height: 1.6;
+        }
+        .success {
+            background: rgba(0,255,0,0.2);
+            color: #00ff00;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+        .error {
+            background: rgba(255,0,0,0.2);
+            color: #ffcccc;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+        .close-btn {
+            background: white;
+            color: #667eea;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: bold;
+            margin-top: 20px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .close-btn:hover {
+            transform: scale(1.05);
+        }
+        a {
+            color: white;
+            text-decoration: underline;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h2>🔄 Connecting to Flutterwave...</h2>
-        <div class="loader"></div>
-        <p id="status">Please wait while we redirect you...</p>
+        <h2 id="title">🔄 L-FLIX Payment</h2>
+        <div id="loader" class="loader"></div>
+        <div id="status" class="status">Connecting to Flutterwave...</div>
+        <div id="message"></div>
+        <button id="closeBtn" class="close-btn" style="display: none;" onclick="telegram.close()">✓ Close Window</button>
     </div>
 
     <script>
+        // Initialize Telegram WebApp
+        const telegram = window.Telegram?.WebApp;
+        
         // Get the redirect URL from the query parameter
         const urlParams = new URLSearchParams(window.location.search);
         const redirectUrl = urlParams.get('url');
+        const txRef = urlParams.get('tx_ref');
         
-        if (redirectUrl) {
-            document.getElementById('status').innerText = 'Redirecting to payment gateway...';
-            // Redirect after 2 seconds
+        console.log('Redirect URL:', redirectUrl);
+        console.log('Transaction Ref:', txRef);
+        
+        const titleEl = document.getElementById('title');
+        const loaderEl = document.getElementById('loader');
+        const statusEl = document.getElementById('status');
+        const messageEl = document.getElementById('message');
+        const closeBtn = document.getElementById('closeBtn');
+        
+        // Check if we're returning from Flutterwave
+        function checkReturnFromFlutterwave() {
+            // If URL contains payment_success or we have a tx_ref in the URL
+            if (window.location.href.includes('payment_success') || 
+                window.location.href.includes('tx_ref=') ||
+                window.location.search.includes('success')) {
+                
+                titleEl.innerText = '✅ Payment Successful!';
+                loaderEl.style.display = 'none';
+                statusEl.innerText = 'Your payment has been processed successfully.';
+                
+                messageEl.className = 'success';
+                messageEl.innerText = 'You can now close this window and return to Telegram.';
+                
+                closeBtn.style.display = 'block';
+                
+                // Auto-close after 3 seconds
+                setTimeout(() => {
+                    if (telegram) {
+                        telegram.close();
+                    }
+                }, 3000);
+                
+                return true;
+            }
+            return false;
+        }
+        
+        // If we have a redirect URL and we're not returning from payment
+        if (redirectUrl && !checkReturnFromFlutterwave()) {
+            statusEl.innerText = '✅ Connected! Redirecting to payment gateway...';
+            
+            // Show countdown
+            let seconds = 3;
+            const countdown = setInterval(() => {
+                statusEl.innerText = `⏳ Redirecting in ${seconds} seconds...`;
+                seconds--;
+                if (seconds < 0) {
+                    clearInterval(countdown);
+                    // Store the tx_ref in localStorage to detect return
+                    if (txRef) {
+                        localStorage.setItem('pending_payment', txRef);
+                    }
+                    // Redirect
+                    window.location.href = redirectUrl;
+                }
+            }, 1000);
+            
+            // Fallback redirect
             setTimeout(() => {
                 window.location.href = redirectUrl;
-            }, 2000);
-        } else {
-            document.getElementById('status').innerText = '❌ Error: No payment URL found';
+            }, 3500);
+            
+        } else if (!checkReturnFromFlutterwave()) {
+            // No redirect URL and not returning from payment
+            titleEl.innerText = '❌ Error';
+            loaderEl.style.display = 'none';
+            statusEl.innerText = 'No payment URL found';
+            messageEl.className = 'error';
+            messageEl.innerText = 'Please return to Telegram and try again.';
+            closeBtn.style.display = 'block';
         }
+        
+        // Check every second if we've returned from payment
+        setInterval(() => {
+            if (window.location.href.includes('payment_success') || 
+                window.location.href.includes('tx_ref=')) {
+                checkReturnFromFlutterwave();
+            }
+        }, 1000);
     </script>
 </body>
 </html>
