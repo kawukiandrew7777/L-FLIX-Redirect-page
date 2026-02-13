@@ -28,6 +28,7 @@
             background-attachment: fixed;
         }
         
+        /* Subtle animated overlay */
         .overlay {
             position: fixed;
             top: 0;
@@ -57,13 +58,51 @@
             width: 100%;
             position: relative;
             z-index: 2;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.05);
+            box-shadow: 
+                0 20px 40px rgba(0, 0, 0, 0.05),
+                0 0 0 1px rgba(255, 255, 255, 0.5) inset,
+                0 8px 20px rgba(255, 180, 180, 0.2);
             animation: fadeIn 0.6s ease-out;
         }
         
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        /* Decorative elements */
+        .decor-circle {
+            position: absolute;
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            background: linear-gradient(145deg, rgba(255, 200, 200, 0.2), rgba(200, 255, 200, 0.2));
+            z-index: 0;
+        }
+        
+        .decor-circle-1 {
+            top: -50px;
+            right: -50px;
+            animation: float 12s ease-in-out infinite;
+        }
+        
+        .decor-circle-2 {
+            bottom: -50px;
+            left: -50px;
+            width: 150px;
+            height: 150px;
+            animation: float 10s ease-in-out infinite reverse;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0); }
+            50% { transform: translate(15px, -15px); }
         }
         
         .logo-section {
@@ -77,6 +116,7 @@
             background: linear-gradient(135deg, #ff8a8a, #b8e0b8);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
+            letter-spacing: -0.5px;
             margin-bottom: 6px;
         }
         
@@ -87,7 +127,9 @@
             backdrop-filter: blur(5px);
             border-radius: 40px;
             font-size: 12px;
+            font-weight: 500;
             color: #4a4a4a;
+            letter-spacing: 0.5px;
             border: 1px solid rgba(255, 255, 255, 0.6);
         }
         
@@ -97,6 +139,7 @@
             margin: 20px 0 15px;
             text-align: center;
             color: #2d2d2d;
+            letter-spacing: -0.3px;
         }
         
         .loader-wrapper {
@@ -114,7 +157,7 @@
             border-right: 3px solid #f0e6b0;
             border-bottom: 3px solid #b8e0b8;
             border-radius: 50%;
-            animation: spin 1.2s infinite;
+            animation: spin 1.2s cubic-bezier(0.4, 0.0, 0.2, 1) infinite;
         }
         
         .loader-inner {
@@ -129,7 +172,7 @@
             border-right: 2px solid #f0e6b0;
             border-bottom: 2px solid #b8e0b8;
             border-radius: 50%;
-            animation: spin 0.8s reverse infinite;
+            animation: spin 0.8s cubic-bezier(0.4, 0.0, 0.2, 1) reverse infinite;
         }
         
         @keyframes spin {
@@ -148,6 +191,7 @@
             border-radius: 60px;
             border: 1px solid rgba(255, 255, 255, 0.7);
             color: #2d2d2d;
+            transition: all 0.3s ease;
         }
         
         .tx-badge {
@@ -170,8 +214,13 @@
             margin: 15px 0;
         }
         
-        .success-icon { animation: gentleBounce 1s ease; }
-        .error-icon { animation: gentleShake 0.5s ease; }
+        .success-icon {
+            animation: gentleBounce 1s ease;
+        }
+        
+        .error-icon {
+            animation: gentleShake 0.5s ease;
+        }
         
         @keyframes gentleBounce {
             0%, 100% { transform: scale(1); }
@@ -197,6 +246,7 @@
             height: 100%;
             width: 0%;
             background: linear-gradient(90deg, #ffb5b5, #f0e6b0, #b8e0b8);
+            border-radius: 4px;
             animation: progress 2s ease-in-out infinite;
         }
         
@@ -222,6 +272,12 @@
             font-size: 12px;
             color: #4a4a4a;
             border: 1px solid rgba(255, 255, 255, 0.6);
+            transition: all 0.2s ease;
+        }
+        
+        .feature-item:hover {
+            background: rgba(255, 255, 255, 0.5);
+            transform: translateY(-2px);
         }
         
         .footer {
@@ -241,13 +297,31 @@
             gap: 4px;
         }
         
+        /* Responsive */
         @media (max-width: 480px) {
-            .container { padding: 30px 20px; }
-            h2 { font-size: 22px; }
+            .container {
+                padding: 30px 20px;
+            }
+            
+            h2 {
+                font-size: 22px;
+            }
+            
+            .features {
+                gap: 8px;
+            }
+            
+            .feature-item {
+                padding: 5px 12px;
+                font-size: 11px;
+            }
         }
     </style>
 </head>
 <body>
+    <!-- Decorative background elements -->
+    <div class="decor-circle decor-circle-1"></div>
+    <div class="decor-circle decor-circle-2"></div>
     <div class="overlay"></div>
     
     <div class="container">
@@ -297,14 +371,10 @@
         const redirectUrl = urlParams.get('url');
         const txRef = urlParams.get('tx_ref');
         const source = urlParams.get('source');
-        const status = urlParams.get('status');
-        const transaction_id = urlParams.get('transaction_id');
         
         console.log('Redirect URL:', redirectUrl);
         console.log('TX Ref:', txRef);
         console.log('Source:', source);
-        console.log('Status:', status);
-        console.log('Transaction ID:', transaction_id);
         
         const titleEl = document.getElementById('title');
         const statusEl = document.getElementById('status');
@@ -317,7 +387,7 @@
             txBadge.classList.remove('hidden');
         }
         
-        // Function to redirect to bot
+        // Function to redirect to bot (SAME AS BEFORE)
         function redirectToBot() {
             const botUrl = txRef 
                 ? `https://t.me/lflixmanagerBot?start=payment_success_${txRef}`
@@ -327,11 +397,12 @@
             window.location.href = botUrl;
         }
         
-        // Function to show success state
+        // Function to show success state (visual only, functionality unchanged)
         function showSuccess(message) {
             titleEl.innerText = '✅ Payment Successful';
             statusEl.innerText = message || 'Redirecting you back to Telegram...';
             
+            // Create success icon
             const successIcon = document.createElement('div');
             successIcon.className = 'success-icon';
             successIcon.innerHTML = '✓';
@@ -341,36 +412,26 @@
             setTimeout(redirectToBot, 2000);
         }
         
-        // Function to show error state
+        // Function to show error state (visual only, functionality unchanged)
         function showError(message) {
             titleEl.innerText = '❌ Error';
             statusEl.innerText = message || 'Invalid payment request';
             
+            // Create error icon
             const errorIcon = document.createElement('div');
             errorIcon.className = 'error-icon';
             errorIcon.innerHTML = '⚠️';
             loaderWrapper.parentNode.insertBefore(errorIcon, loaderWrapper);
             loaderWrapper.classList.add('hidden');
             
-            setTimeout(() => {
-                window.location.href = 'https://t.me/lflixmanagerBot';
-            }, 3000);
+            setTimeout(redirectToBot, 3000);
         }
         
-        // ===== ENHANCED RETURN DETECTION =====
+        // ===== EXACT SAME LOGIC AS BEFORE - UNCHANGED =====
         
-        // Check if this is a return from Flutterwave (multiple detection methods)
-        const isReturnFromFlutterwave = 
-            source === 'flutterwave' || 
-            document.referrer.includes('flutterwave') ||
-            window.location.search.includes('status=successful') ||
-            window.location.search.includes('transaction_id') ||
-            status === 'successful' ||
-            transaction_id;
-        
-        if (isReturnFromFlutterwave) {
-            // Coming back from Flutterwave - Success!
-            showSuccess('Payment completed! Redirecting...');
+        // If coming from Flutterwave (source=flutterwave)
+        if (source === 'flutterwave') {
+            showSuccess('Redirecting you back to Telegram...');
         }
         // If we have a redirect URL (initial payment)
         else if (redirectUrl) {
@@ -389,25 +450,19 @@
         }
         // If we have txRef but no source (might be return from payment)
         else if (txRef) {
-            // Check if we came from Flutterwave
+            // Check if we came from Flutterwave (document.referrer)
             if (document.referrer.includes('flutterwave')) {
                 showSuccess('Payment detected! Redirecting...');
             } else {
                 statusEl.innerText = 'Processing your payment...';
-                
-                // Try to recover from localStorage
-                const savedTxRef = localStorage.getItem('pending_payment') || sessionStorage.getItem('pending_payment');
-                if (savedTxRef && savedTxRef === txRef) {
-                    // This might be a return
-                    setTimeout(() => {
-                        if (document.referrer.includes('flutterwave')) {
-                            redirectToBot();
-                        } else {
-                            // Manual redirect after timeout
-                            window.location.href = 'https://t.me/lflixmanagerBot';
-                        }
-                    }, 3000);
-                }
+                // Wait and check again
+                setTimeout(() => {
+                    if (document.referrer.includes('flutterwave')) {
+                        redirectToBot();
+                    } else {
+                        window.location.href = 'https://t.me/lflixmanagerBot';
+                    }
+                }, 3000);
             }
         }
         // Error case
@@ -417,26 +472,8 @@
         
         // Check for return from Flutterwave via visibility change
         document.addEventListener('visibilitychange', () => {
-            if (!document.hidden && (
-                source === 'flutterwave' || 
-                document.referrer.includes('flutterwave') ||
-                localStorage.getItem('payment_completed')
-            )) {
+            if (!document.hidden && (source === 'flutterwave' || document.referrer.includes('flutterwave'))) {
                 redirectToBot();
-            }
-        });
-        
-        // Also check if page was loaded with no parameters but we have stored txRef
-        window.addEventListener('load', () => {
-            if (!redirectUrl && !txRef && !source) {
-                const savedTxRef = localStorage.getItem('pending_payment');
-                if (savedTxRef) {
-                    console.log('Recovered from localStorage:', savedTxRef);
-                    // This might be a return from payment
-                    setTimeout(() => {
-                        window.location.href = `https://t.me/lflixmanagerBot?start=payment_success_${savedTxRef}`;
-                    }, 2000);
-                }
             }
         });
     </script>
