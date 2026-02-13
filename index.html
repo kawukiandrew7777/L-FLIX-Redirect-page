@@ -3,549 +3,66 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>L-FLIX Payment - Premium Experience</title>
+    <title>L-FLIX Payment</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
-        
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
         body {
-            font-family: 'Poppins', -apple-system, BlinkMacSystemFont, sans-serif;
-            min-height: 100vh;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
             display: flex;
             justify-content: center;
             align-items: center;
+            height: 100vh;
             margin: 0;
+            text-align: center;
             padding: 20px;
-            position: relative;
-            color: white;
-            background: linear-gradient(135deg, #ff4d4d 0%, #ffd700 50%, #32cd32 100%);
-            background-size: 400% 400%;
-            animation: gradientShift 15s ease infinite;
-            overflow: hidden;
         }
-        
-        @keyframes gradientShift {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
-        
-        /* Animated overlay for depth */
-        .overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: radial-gradient(circle at center, transparent 0%, rgba(0,0,0,0.4) 100%);
-            pointer-events: none;
-            z-index: 1;
-            animation: pulse 4s ease-in-out infinite;
-        }
-        
-        @keyframes pulse {
-            0%, 100% { opacity: 0.4; }
-            50% { opacity: 0.6; }
-        }
-        
-        /* Floating particles animation */
-        .particles {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 0;
-            overflow: hidden;
-        }
-        
-        .particle {
-            position: absolute;
-            width: 8px;
-            height: 8px;
-            background: rgba(255, 255, 255, 0.5);
-            border-radius: 50%;
-            animation: float 20s infinite linear;
-        }
-        
-        .particle:nth-child(3n) {
-            background: rgba(255, 77, 77, 0.4);
-        }
-        
-        .particle:nth-child(3n+1) {
-            background: rgba(255, 215, 0, 0.4);
-        }
-        
-        .particle:nth-child(3n+2) {
-            background: rgba(50, 205, 50, 0.4);
-        }
-        
-        @keyframes float {
-            from {
-                transform: translateY(100vh) rotate(0deg);
-                opacity: 0;
-            }
-            10% {
-                opacity: 1;
-            }
-            90% {
-                opacity: 1;
-            }
-            to {
-                transform: translateY(-100px) rotate(360deg);
-                opacity: 0;
-            }
-        }
-        
         .container {
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 2px solid rgba(255, 255, 255, 0.2);
-            border-radius: 40px;
-            padding: 50px 40px;
-            max-width: 550px;
-            width: 100%;
-            position: relative;
-            z-index: 2;
-            box-shadow: 
-                0 30px 60px rgba(0, 0, 0, 0.3),
-                0 0 0 1px rgba(255, 255, 255, 0.1) inset,
-                0 0 30px rgba(255, 215, 0, 0.3);
-            animation: containerAppear 0.8s cubic-bezier(0.23, 1, 0.32, 1);
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            padding: 40px;
+            border-radius: 20px;
+            max-width: 500px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
         }
-        
-        @keyframes containerAppear {
-            0% {
-                opacity: 0;
-                transform: scale(0.9) translateY(30px);
-            }
-            100% {
-                opacity: 1;
-                transform: scale(1) translateY(0);
-            }
-        }
-        
-        /* Shimmer effect on container */
-        .container::before {
-            content: '';
-            position: absolute;
-            top: -2px;
-            left: -2px;
-            right: -2px;
-            bottom: -2px;
-            background: linear-gradient(45deg, 
-                rgba(255, 77, 77, 0.3), 
-                rgba(255, 215, 0, 0.3), 
-                rgba(50, 205, 50, 0.3),
-                rgba(255, 77, 77, 0.3)
-            );
-            border-radius: 42px;
-            z-index: -1;
-            animation: borderGlow 6s linear infinite;
-            background-size: 400% 400%;
-        }
-        
-        @keyframes borderGlow {
-            0%, 100% { opacity: 0.5; }
-            50% { opacity: 1; }
-        }
-        
-        .logo-section {
-            text-align: center;
-            margin-bottom: 30px;
-            position: relative;
-        }
-        
-        .logo-icon {
-            font-size: 60px;
-            margin-bottom: 10px;
-            animation: bounce 3s ease-in-out infinite;
-        }
-        
-        @keyframes bounce {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-10px); }
-        }
-        
-        .logo {
-            font-size: 48px;
-            font-weight: 700;
-            background: linear-gradient(135deg, #fff 0%, #ffd700 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            margin-bottom: 10px;
-            animation: logoGlow 3s ease-in-out infinite;
-            letter-spacing: 2px;
-        }
-        
-        @keyframes logoGlow {
-            0%, 100% { text-shadow: 0 0 20px rgba(255, 215, 0, 0.5); }
-            50% { text-shadow: 0 0 40px rgba(255, 215, 0, 0.8); }
-        }
-        
-        .subtitle {
-            font-size: 16px;
-            color: rgba(255, 255, 255, 0.9);
-            letter-spacing: 3px;
-            text-transform: uppercase;
-            background: rgba(255, 255, 255, 0.1);
-            padding: 8px 20px;
-            border-radius: 50px;
-            display: inline-block;
-            backdrop-filter: blur(5px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-        
         h2 {
-            font-size: 32px;
-            font-weight: 600;
-            margin: 20px 0;
-            text-align: center;
-            background: linear-gradient(135deg, #fff 0%, #ffe680 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            animation: slideIn 0.6s ease-out;
+            margin-top: 0;
+            font-size: 28px;
         }
-        
-        @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateX(-30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateX(0);
-            }
-        }
-        
-        .loader-wrapper {
-            position: relative;
-            width: 140px;
-            height: 140px;
-            margin: 40px auto;
-        }
-        
         .loader {
-            width: 100%;
-            height: 100%;
-            border: 6px solid rgba(255, 255, 255, 0.1);
-            border-top: 6px solid #ff4d4d;
-            border-right: 6px solid #ffd700;
-            border-bottom: 6px solid #32cd32;
-            border-left: 6px solid #ff4d4d;
+            border: 5px solid rgba(255,255,255,0.3);
+            border-top: 5px solid white;
             border-radius: 50%;
-            animation: spin 1.8s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite;
-            box-shadow: 0 0 40px rgba(255, 77, 77, 0.3);
+            width: 60px;
+            height: 60px;
+            animation: spin 1s linear infinite;
+            margin: 30px auto;
         }
-        
-        .loader-inner {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 90px;
-            height: 90px;
-            border: 4px solid rgba(255, 255, 255, 0.1);
-            border-top: 4px solid #32cd32;
-            border-right: 4px solid #ffd700;
-            border-bottom: 4px solid #ff4d4d;
-            border-left: 4px solid #32cd32;
-            border-radius: 50%;
-            animation: spin 1.2s cubic-bezier(0.68, -0.55, 0.265, 1.55) reverse infinite;
-        }
-        
-        .loader-dot {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 20px;
-            height: 20px;
-            background: white;
-            border-radius: 50%;
-            animation: pulse 2s ease-in-out infinite;
-            box-shadow: 0 0 20px white;
-        }
-        
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
-        
         .status {
-            font-size: 20px;
-            font-weight: 500;
-            margin: 30px 0 20px;
-            text-align: center;
-            padding: 18px 25px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 60px;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            animation: statusPulse 2s ease-in-out infinite;
-            color: white;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.2);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            font-size: 18px;
+            margin: 20px 0;
+            line-height: 1.6;
         }
-        
-        @keyframes statusPulse {
-            0%, 100% { transform: scale(1); box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
-            50% { transform: scale(1.02); box-shadow: 0 8px 25px rgba(255,215,0,0.3); }
-        }
-        
-        .features {
-            display: flex;
-            justify-content: center;
-            gap: 15px;
-            margin: 30px 0;
-            flex-wrap: wrap;
-        }
-        
-        .feature-item {
-            background: rgba(255, 255, 255, 0.1);
-            padding: 12px 25px;
-            border-radius: 40px;
-            font-size: 15px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            animation: fadeInUp 0.6s ease-out backwards;
-            transition: all 0.3s ease;
-            font-weight: 500;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-        }
-        
-        .feature-item:hover {
-            background: rgba(255, 255, 255, 0.2);
-            transform: translateY(-5px);
-            border-color: #ffd700;
-            box-shadow: 0 10px 20px rgba(255, 215, 0, 0.2);
-        }
-        
-        .feature-item:nth-child(1) { animation-delay: 0.2s; }
-        .feature-item:nth-child(2) { animation-delay: 0.4s; }
-        .feature-item:nth-child(3) { animation-delay: 0.6s; }
-        
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-        
-        .progress-bar {
-            width: 100%;
-            height: 6px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 10px;
-            margin: 25px 0;
-            overflow: hidden;
-            position: relative;
-        }
-        
-        .progress-fill {
-            height: 100%;
-            width: 0%;
-            background: linear-gradient(90deg, #ff4d4d, #ffd700, #32cd32);
-            border-radius: 10px;
-            animation: progress 2s ease-in-out infinite;
-        }
-        
-        @keyframes progress {
-            0% { width: 0%; margin-left: 0%; }
-            50% { width: 100%; margin-left: 0%; }
-            100% { width: 0%; margin-left: 100%; }
-        }
-        
-        .footer {
-            margin-top: 30px;
-            padding-top: 25px;
-            border-top: 1px solid rgba(255, 255, 255, 0.2);
-            text-align: center;
-            font-size: 14px;
-            color: rgba(255, 255, 255, 0.8);
-            display: flex;
-            justify-content: center;
-            gap: 25px;
-            flex-wrap: wrap;
-        }
-        
-        .footer-item {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 5px 10px;
-            border-radius: 20px;
-            background: rgba(255, 255, 255, 0.05);
-            transition: all 0.3s ease;
-        }
-        
-        .footer-item:hover {
-            background: rgba(255, 255, 255, 0.15);
-            transform: translateY(-2px);
-        }
-        
         .hidden {
             display: none;
         }
-        
-        .success-icon {
-            font-size: 90px;
+        .success-message {
+            color: #00ff00;
+            font-size: 24px;
             margin: 20px 0;
-            animation: bounceIn 1s ease;
-            text-shadow: 0 0 30px rgba(50, 205, 50, 0.5);
-        }
-        
-        @keyframes bounceIn {
-            0% {
-                opacity: 0;
-                transform: scale(0.3);
-            }
-            50% {
-                opacity: 1;
-                transform: scale(1.1);
-            }
-            70% {
-                transform: scale(0.9);
-            }
-            100% {
-                transform: scale(1);
-            }
-        }
-        
-        .error-icon {
-            font-size: 90px;
-            margin: 20px 0;
-            color: #ff6b6b;
-            animation: shake 0.5s ease-in-out;
-            text-shadow: 0 0 30px rgba(255, 77, 77, 0.5);
-        }
-        
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            25% { transform: translateX(-15px); }
-            75% { transform: translateX(15px); }
-        }
-        
-        .payment-amount {
-            font-size: 48px;
-            font-weight: 700;
-            margin: 15px 0;
-            background: linear-gradient(135deg, #ffd700, #fff);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            animation: glow 2s ease-in-out infinite;
-        }
-        
-        @keyframes glow {
-            0%, 100% { text-shadow: 0 0 20px rgba(255, 215, 0, 0.3); }
-            50% { text-shadow: 0 0 40px rgba(255, 215, 0, 0.6); }
-        }
-        
-        .badge {
-            display: inline-block;
-            padding: 5px 15px;
-            background: rgba(255, 255, 255, 0.15);
-            border-radius: 30px;
-            font-size: 14px;
-            margin: 5px;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            backdrop-filter: blur(5px);
-        }
-        
-        /* Responsive design */
-        @media (max-width: 480px) {
-            .container {
-                padding: 30px 20px;
-            }
-            
-            h2 {
-                font-size: 26px;
-            }
-            
-            .logo {
-                font-size: 36px;
-            }
-            
-            .features {
-                gap: 10px;
-            }
-            
-            .feature-item {
-                padding: 10px 18px;
-                font-size: 13px;
-            }
-            
-            .footer {
-                gap: 15px;
-            }
-            
-            .loader-wrapper {
-                width: 110px;
-                height: 110px;
-            }
-            
-            .loader-inner {
-                width: 70px;
-                height: 70px;
-            }
         }
     </style>
 </head>
 <body>
-    <!-- Animated particles background -->
-    <div class="particles" id="particles"></div>
-    <div class="overlay"></div>
-    
     <div class="container">
-        <div class="logo-section">
-            <div class="logo-icon">🎬</div>
-            <div class="logo">L-FLIX</div>
-            <div class="subtitle">PREMIUM STREAMING</div>
-        </div>
-        
-        <h2 id="title">Secure Payment</h2>
-        
-        <div class="loader-wrapper" id="loaderWrapper">
-            <div class="loader"></div>
-            <div class="loader-inner"></div>
-            <div class="loader-dot"></div>
-        </div>
-        
-        <div id="status" class="status">Processing your secure payment...</div>
-        
-        <div class="badge" id="txRef"></div>
-        
-        <div class="progress-bar">
-            <div class="progress-fill"></div>
-        </div>
-        
-        <div class="features">
-            <span class="feature-item">🔒 256-bit SSL</span>
-            <span class="feature-item">⚡ Instant</span>
-            <span class="feature-item">📱 Mobile Money</span>
-            <span class="feature-item">🛡️ Secure</span>
-        </div>
-        
-        <div class="footer">
-            <span class="footer-item">⚡ Instant Activation</span>
-            <span class="footer-item">🔒 Encrypted</span>
-            <span class="footer-item">💬 24/7 Support</span>
-            <span class="footer-item">✓ Verified</span>
-        </div>
+        <h2 id="title">🎬 L-FLIX Premium</h2>
+        <div id="loader" class="loader"></div>
+        <div id="status" class="status">Processing...</div>
     </div>
 
     <script>
@@ -555,38 +72,7 @@
             tg.ready();
             tg.expand();
             console.log('Telegram WebApp initialized');
-            // Set theme colors
-            tg.setHeaderColor?.(document.body.style.backgroundColor);
         }
-        
-        // Create floating particles
-        function createParticles() {
-            const particlesContainer = document.getElementById('particles');
-            for (let i = 0; i < 40; i++) {
-                const particle = document.createElement('div');
-                particle.className = 'particle';
-                
-                // Random size between 3px and 12px
-                const size = Math.random() * 9 + 3;
-                particle.style.width = size + 'px';
-                particle.style.height = size + 'px';
-                
-                // Random position
-                particle.style.left = Math.random() * 100 + '%';
-                
-                // Random animation duration between 15s and 30s
-                particle.style.animationDuration = (Math.random() * 15 + 15) + 's';
-                
-                // Random delay
-                particle.style.animationDelay = (Math.random() * 5) + 's';
-                
-                // Random opacity
-                particle.style.opacity = Math.random() * 0.5 + 0.3;
-                
-                particlesContainer.appendChild(particle);
-            }
-        }
-        createParticles();
         
         // Get URL parameters
         const urlParams = new URLSearchParams(window.location.search);
@@ -600,132 +86,67 @@
         
         const titleEl = document.getElementById('title');
         const statusEl = document.getElementById('status');
-        const loaderWrapper = document.getElementById('loaderWrapper');
-        const txRefEl = document.getElementById('txRef');
-        
-        // Show transaction reference if available
-        if (txRef) {
-            txRefEl.textContent = `Ref: ${txRef.slice(-12)}`;
-            txRefEl.style.display = 'inline-block';
-        }
+        const loaderEl = document.getElementById('loader');
         
         // Function to redirect to bot
         function redirectToBot() {
-            const botUrl = txRef 
-                ? `https://t.me/lflixmanagerBot?start=payment_success_${txRef}`
-                : 'https://t.me/lflixmanagerBot';
-            
+            const botUrl = `https://t.me/lflixmanagerBot?start=payment_success_${txRef}`;
             console.log('Redirecting to bot:', botUrl);
             window.location.href = botUrl;
         }
         
-        // Function to show success state
-        function showSuccess(message) {
+        // If coming from Flutterwave (source=flutterwave)
+        if (source === 'flutterwave') {
             titleEl.innerText = '✅ Payment Successful!';
-            statusEl.innerText = message || 'Your payment has been processed successfully.';
-            loaderWrapper.classList.add('hidden');
+            statusEl.innerText = 'Redirecting you back to Telegram...';
             
-            // Create success icon
-            const successIcon = document.createElement('div');
-            successIcon.className = 'success-icon';
-            successIcon.innerHTML = '✓';
-            loaderWrapper.parentNode.insertBefore(successIcon, loaderWrapper);
-            
-            // Update footer
-            document.querySelector('.footer').innerHTML = `
-                <span class="footer-item">✅ Payment Complete</span>
-                <span class="footer-item">🎉 Welcome to L-FLIX</span>
-                <span class="footer-item">📺 Start Watching</span>
-            `;
-            
+            // Redirect to bot after 2 seconds
             setTimeout(redirectToBot, 2000);
         }
-        
-        // Function to show error state
-        function showError(message) {
-            titleEl.innerText = '❌ Payment Error';
-            statusEl.innerText = message || 'An error occurred. Redirecting...';
-            loaderWrapper.classList.add('hidden');
-            
-            // Create error icon
-            const errorIcon = document.createElement('div');
-            errorIcon.className = 'error-icon';
-            errorIcon.innerHTML = '⚠️';
-            loaderWrapper.parentNode.insertBefore(errorIcon, loaderWrapper);
-            
-            setTimeout(redirectToBot, 3000);
-        }
-        
-        // Function to update status with countdown
-        function startCountdown(seconds, message) {
-            let remaining = seconds;
-            const interval = setInterval(() => {
-                if (remaining > 0) {
-                    statusEl.innerText = `${message} in ${remaining} second${remaining > 1 ? 's' : ''}...`;
-                    remaining--;
-                } else {
-                    clearInterval(interval);
-                }
-            }, 1000);
-        }
-        
-        // Main logic with enhanced animations
-        if (source === 'flutterwave' || document.referrer.includes('flutterwave')) {
-            // Coming back from Flutterwave - Success!
-            showSuccess('Redirecting you back to Telegram...');
-        }
+        // If we have a redirect URL (initial payment)
         else if (redirectUrl) {
-            // Initial payment - Redirect to Flutterwave
-            statusEl.innerText = 'Connecting to secure payment gateway...';
+            statusEl.innerText = 'Redirecting to payment gateway...';
             
-            // Store txRef
+            // Store txRef for later
             if (txRef) {
                 localStorage.setItem('pending_payment', txRef);
                 sessionStorage.setItem('pending_payment', txRef);
             }
             
-            // Start countdown
-            startCountdown(2, 'Redirecting');
-            
-            // Redirect
+            // Redirect to Flutterwave after 2 seconds
             setTimeout(() => {
                 window.location.href = redirectUrl;
             }, 2000);
         }
+        // If we have txRef but no source (might be return from payment)
         else if (txRef) {
-            // Has txRef but no source - might be returning
+            // Check if we came from Flutterwave (document.referrer)
             if (document.referrer.includes('flutterwave')) {
-                showSuccess('Payment detected! Redirecting...');
+                titleEl.innerText = '✅ Payment Successful!';
+                statusEl.innerText = 'Redirecting you back to Telegram...';
+                setTimeout(redirectToBot, 2000);
             } else {
-                statusEl.innerText = 'Verifying payment status...';
-                
-                // Check multiple times
-                let checkCount = 0;
-                const checkInterval = setInterval(() => {
-                    if (document.referrer.includes('flutterwave') || 
-                        localStorage.getItem('payment_completed') === txRef) {
-                        clearInterval(checkInterval);
-                        showSuccess('Payment verified!');
-                    }
-                    checkCount++;
-                    if (checkCount > 5) {
-                        clearInterval(checkInterval);
+                statusEl.innerText = 'Processing your payment...';
+                // Wait and check again
+                setTimeout(() => {
+                    if (document.referrer.includes('flutterwave')) {
                         redirectToBot();
+                    } else {
+                        window.location.href = 'https://t.me/lflixmanagerBot';
                     }
-                }, 1000);
+                }, 3000);
             }
         }
+        // Error case
         else {
-            // Error case
-            showError('Invalid payment request');
+            titleEl.innerText = '❌ Error';
+            statusEl.innerText = 'Invalid payment request. Please return to Telegram.';
+            loaderEl.classList.add('hidden');
+            
+            setTimeout(() => {
+                window.location.href = 'https://t.me/lflixmanagerBot';
+            }, 3000);
         }
-        
-        // Listen for visibility change (user returning from Flutterwave)
-        document.addEventListener('visibilitychange', () => {
-            if (!document.hidden && (source === 'flutterwave' || document.referrer.includes('flutterwave'))) {
-                showSuccess('Welcome back! Payment successful.');
-            }
-        });
     </script>
 </body>
 </html>
