@@ -51,19 +51,22 @@
         .hidden {
             display: none;
         }
-        .success-icon {
-            font-size: 64px;
-            margin: 20px 0;
-            color: #00ff00;
+        .movie-info {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 10px;
+            font-size: 14px;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <div id="content">
-            <h2 id="title">🔄 L-FLIX Payment</h2>
-            <div id="loader" class="loader"></div>
-            <div id="status" class="status">Connecting to payment gateway...</div>
+        <h2 id="title">🎬 L-FLIX Premium</h2>
+        <div id="loader" class="loader"></div>
+        <div id="status" class="status">Connecting to payment gateway...</div>
+        <div id="movieInfo" class="movie-info">
+            <div id="movieTitle"></div>
         </div>
     </div>
 
@@ -76,20 +79,41 @@
             console.log('Telegram WebApp initialized');
         }
         
+        // Movie database for daily rotation
+        const movies = [
+            { title: "Dune: Part Three", year: "2026", rating: "★★★★★" },
+            { title: "Avatar: The Way of Water 2", year: "2026", rating: "★★★★½" },
+            { title: "The Batman: Dark Knight Returns", year: "2026", rating: "★★★★½" },
+            { title: "Mission: Impossible 8", year: "2026", rating: "★★★★☆" },
+            { title: "Spider-Man: Beyond the Spider-Verse", year: "2026", rating: "★★★★★" },
+            { title: "John Wick: Chapter 5", year: "2026", rating: "★★★★½" },
+            { title: "Deadpool 3", year: "2026", rating: "★★★★½" },
+            { title: "Captain America: Brave New World", year: "2026", rating: "★★★★☆" }
+        ];
+        
+        // Get daily movie
+        const today = new Date();
+        const dateString = `${today.getFullYear()}-${today.getMonth()}-${today.getDate()}`;
+        let hash = 0;
+        for (let i = 0; i < dateString.length; i++) {
+            hash = ((hash << 5) - hash) + dateString.charCodeAt(i);
+            hash = hash & hash;
+        }
+        const movie = movies[Math.abs(hash) % movies.length];
+        document.getElementById('movieTitle').innerHTML = 
+            `🎬 Today's Feature: <b>${movie.title}</b> (${movie.year}) ${movie.rating}`;
+        
         // Get URL parameters
         const urlParams = new URLSearchParams(window.location.search);
         const redirectUrl = urlParams.get('url');
         const txRef = urlParams.get('tx_ref');
-        const command = urlParams.get('command');
         
         console.log('Redirect URL:', redirectUrl);
         console.log('TX Ref:', txRef);
-        console.log('Command:', command);
         
         const titleEl = document.getElementById('title');
         const statusEl = document.getElementById('status');
         const loaderEl = document.getElementById('loader');
-        const contentEl = document.getElementById('content');
         
         // Function to close WebApp
         function closeWebApp() {
@@ -101,35 +125,9 @@
             }
         }
         
-        // Function to show success and close
-        function showSuccessAndClose() {
-            titleEl.innerText = '✅ Payment Successful!';
-            statusEl.innerText = 'Your payment has been processed. You can close this window.';
-            loaderEl.classList.add('hidden');
-            
-            // Add success emoji
-            const successDiv = document.createElement('div');
-            successDiv.className = 'success-icon';
-            successDiv.innerHTML = '✅';
-            contentEl.appendChild(successDiv);
-            
-            // Close after 1.5 seconds
-            setTimeout(closeWebApp, 1500);
-        }
-        
-        // If command is to close, close immediately
-        if (command === 'close') {
-            showSuccessAndClose();
-        }
         // If we have a redirect URL, proceed with payment
-        else if (redirectUrl) {
+        if (redirectUrl) {
             statusEl.innerText = 'Redirecting to payment gateway...';
-            
-            // Store that we're processing
-            if (txRef) {
-                localStorage.setItem('pending_payment', txRef);
-                sessionStorage.setItem('pending_payment', txRef);
-            }
             
             // Redirect after 2 seconds
             setTimeout(() => {
@@ -143,38 +141,6 @@
             // Close after 3 seconds on error
             setTimeout(closeWebApp, 3000);
         }
-        
-        // Listen for messages from the bot (via postMessage)
-        window.addEventListener('message', function(event) {
-            console.log('Received message:', event.data);
-            if (event.data === 'close' || event.data?.command === 'close') {
-                showSuccessAndClose();
-            }
-        });
-        
-        // Check if we're returning from Flutterwave
-        let returnCheckCount = 0;
-        const returnInterval = setInterval(function() {
-            returnCheckCount++;
-            
-            // If we have a txRef and the URL changed or we have a payment_success in referrer
-            if (txRef && (
-                document.referrer.includes('flutterwave') || 
-                document.referrer.includes('rave') ||
-                window.location.hash.includes('success') ||
-                sessionStorage.getItem('payment_completed') === txRef
-            )) {
-                console.log('Detected return from Flutterwave');
-                sessionStorage.setItem('payment_completed', txRef);
-                showSuccessAndClose();
-                clearInterval(returnInterval);
-            }
-            
-            // Stop checking after 2 minutes
-            if (returnCheckCount > 120) {
-                clearInterval(returnInterval);
-            }
-        }, 1000);
     </script>
 </body>
 </html>
