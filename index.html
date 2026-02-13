@@ -4,7 +4,6 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>L-FLIX Payment</title>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -48,149 +47,33 @@
             margin: 20px 0;
             line-height: 1.6;
         }
-        .hidden {
-            display: none;
-        }
-        .button {
-            background: white;
-            color: #667eea;
-            border: none;
-            padding: 12px 30px;
-            border-radius: 25px;
-            font-size: 16px;
-            font-weight: bold;
-            margin-top: 20px;
-            cursor: pointer;
-            text-decoration: none;
-            display: inline-block;
-        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h2 id="title">🎬 L-FLIX Premium</h2>
+        <h2>🎬 L-FLIX Premium</h2>
         <div id="loader" class="loader"></div>
         <div id="status" class="status">Connecting to payment gateway...</div>
-        <div id="error" style="display: none; color: #ffcccc; margin-top: 20px;"></div>
-        <a id="returnButton" href="#" style="display: none;" class="button">🔙 Return to Bot</a>
     </div>
 
     <script>
-        // Initialize Telegram WebApp
-        const tg = window.Telegram?.WebApp;
-        if (tg) {
-            tg.ready();
-            tg.expand();
-            console.log('Telegram WebApp initialized');
-        }
-        
         // Get URL parameters
         const urlParams = new URLSearchParams(window.location.search);
         const redirectUrl = urlParams.get('url');
-        const txRef = urlParams.get('tx_ref');
         
         console.log('Redirect URL:', redirectUrl);
-        console.log('TX Ref:', txRef);
         
-        const titleEl = document.getElementById('title');
-        const statusEl = document.getElementById('status');
-        const loaderEl = document.getElementById('loader');
-        const errorEl = document.getElementById('error');
-        const returnButton = document.getElementById('returnButton');
-        
-        // Set return URL
-        const BOT_USERNAME = "lflixmanagerBot";
-        const returnUrl = `https://t.me/${BOT_USERNAME}?start=payment_success_${txRef}`;
-        returnButton.href = returnUrl;
-        
-        // Function to close WebApp
-        function closeWebApp() {
-            console.log('Closing WebApp...');
-            if (tg) {
-                tg.close();
-            } else {
-                window.close();
-            }
-        }
-        
-        // Function to redirect to Flutterwave
-        function redirectToFlutterwave() {
-            if (redirectUrl) {
-                statusEl.innerText = 'Redirecting to payment gateway...';
-                
-                // Store tx_ref in localStorage to detect return
-                if (txRef) {
-                    localStorage.setItem('pending_payment', txRef);
-                    sessionStorage.setItem('pending_payment', txRef);
-                }
-                
-                // Redirect to Flutterwave
-                setTimeout(() => {
-                    window.location.href = redirectUrl;
-                }, 1500);
-            }
-        }
-        
-        // Check if we're returning from Flutterwave
-        function checkReturnFromFlutterwave() {
-            // If URL has payment_success or we have tx_ref in localStorage
-            if (window.location.href.includes('payment_success') || 
-                document.referrer.includes('flutterwave') ||
-                sessionStorage.getItem('payment_completed') === txRef) {
-                
-                titleEl.innerText = '✅ Payment Successful!';
-                statusEl.innerText = 'Your payment has been processed successfully.';
-                loaderEl.classList.add('hidden');
-                
-                // Show return button
-                returnButton.style.display = 'inline-block';
-                
-                // Close WebApp after 2 seconds
-                setTimeout(closeWebApp, 2000);
-                return true;
-            }
-            return false;
-        }
-        
-        // Main logic
-        if (checkReturnFromFlutterwave()) {
-            // Already returned from payment
-        } else if (redirectUrl) {
-            redirectToFlutterwave();
+        // If we have a redirect URL, proceed with payment
+        if (redirectUrl) {
+            document.getElementById('status').innerText = 'Redirecting to payment gateway...';
             
-            // Set up return detection
-            let checkCount = 0;
-            const checkInterval = setInterval(() => {
-                checkCount++;
-                
-                // Check if we've returned
-                if (window.location.href.includes('payment_success') || 
-                    document.referrer.includes('flutterwave') ||
-                    sessionStorage.getItem('payment_completed') === txRef) {
-                    
-                    sessionStorage.setItem('payment_completed', txRef);
-                    clearInterval(checkInterval);
-                    checkReturnFromFlutterwave();
-                }
-                
-                // Stop checking after 2 minutes
-                if (checkCount > 120) {
-                    clearInterval(checkInterval);
-                    errorEl.style.display = 'block';
-                    errorEl.innerText = 'Payment is taking too long. Click below to check status.';
-                    returnButton.style.display = 'inline-block';
-                    returnButton.innerText = '📱 Check Payment Status';
-                }
-            }, 1000);
-            
+            // Redirect after 1.5 seconds
+            setTimeout(() => {
+                window.location.href = redirectUrl;
+            }, 1500);
         } else {
-            titleEl.innerText = '❌ Error';
-            statusEl.innerText = 'No payment URL found.';
-            loaderEl.classList.add('hidden');
-            errorEl.style.display = 'block';
-            errorEl.innerText = 'Please return to Telegram and try again.';
-            returnButton.style.display = 'inline-block';
-            returnButton.innerText = '🔙 Return to Bot';
+            document.getElementById('status').innerText = '❌ Error: No payment URL found';
+            document.getElementById('loader').style.display = 'none';
         }
     </script>
 </body>
