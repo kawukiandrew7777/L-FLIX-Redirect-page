@@ -16,53 +16,80 @@
             height: 100vh;
             margin: 0;
             text-align: center;
+            padding: 20px;
         }
         .container {
             background: rgba(255,255,255,0.1);
             backdrop-filter: blur(10px);
-            padding: 30px;
+            padding: 40px;
             border-radius: 20px;
-            max-width: 400px;
+            max-width: 500px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+        }
+        h2 {
+            margin-top: 0;
+            font-size: 28px;
         }
         .loader {
             border: 5px solid rgba(255,255,255,0.3);
             border-top: 5px solid white;
             border-radius: 50%;
-            width: 50px;
-            height: 50px;
+            width: 60px;
+            height: 60px;
             animation: spin 1s linear infinite;
-            margin: 20px auto;
+            margin: 30px auto;
         }
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+        .status {
+            font-size: 18px;
+            margin: 20px 0;
+            line-height: 1.6;
+        }
         .hidden {
             display: none;
+        }
+        .success-icon {
+            font-size: 64px;
+            margin: 20px 0;
+            color: #00ff00;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h2>🔄 L-FLIX Payment</h2>
-        <div class="loader" id="loader"></div>
-        <div class="status" id="status">Connecting to payment gateway...</div>
+        <div id="content">
+            <h2 id="title">🔄 L-FLIX Payment</h2>
+            <div id="loader" class="loader"></div>
+            <div id="status" class="status">Connecting to payment gateway...</div>
+        </div>
     </div>
 
     <script>
         // Initialize Telegram WebApp
         const tg = window.Telegram?.WebApp;
+        if (tg) {
+            tg.ready();
+            tg.expand();
+            console.log('Telegram WebApp initialized');
+        }
         
         // Get URL parameters
         const urlParams = new URLSearchParams(window.location.search);
         const redirectUrl = urlParams.get('url');
         const txRef = urlParams.get('tx_ref');
+        const command = urlParams.get('command');
         
         console.log('Redirect URL:', redirectUrl);
         console.log('TX Ref:', txRef);
+        console.log('Command:', command);
         
+        const titleEl = document.getElementById('title');
         const statusEl = document.getElementById('status');
         const loaderEl = document.getElementById('loader');
+        const contentEl = document.getElementById('content');
         
         // Function to close WebApp
         function closeWebApp() {
@@ -73,54 +100,81 @@
                 window.close();
             }
         }
-
-        // Check if we're returning from Flutterwave
-        function checkForReturn() {
-            // If URL has payment_success or we came from Flutterwave
-            if (window.location.href.includes('payment_success') || 
-                document.referrer.includes('flutterwave') ||
-                window.location.search.includes('success')) {
-                
-                statusEl.innerText = '✅ Payment successful! Closing...';
-                loaderEl.classList.add('hidden');
-                
-                // Close after 1 second
-                setTimeout(closeWebApp, 1000);
-                return true;
-            }
-            return false;
+        
+        // Function to show success and close
+        function showSuccessAndClose() {
+            titleEl.innerText = '✅ Payment Successful!';
+            statusEl.innerText = 'Your payment has been processed. You can close this window.';
+            loaderEl.classList.add('hidden');
+            
+            // Add success emoji
+            const successDiv = document.createElement('div');
+            successDiv.className = 'success-icon';
+            successDiv.innerHTML = '✅';
+            contentEl.appendChild(successDiv);
+            
+            // Close after 1.5 seconds
+            setTimeout(closeWebApp, 1500);
         }
-
-        // Check immediately
-        if (!checkForReturn()) {
-            // If we have a redirect URL, proceed with payment
-            if (redirectUrl) {
-                statusEl.innerText = 'Redirecting to payment gateway...';
-                
-                // Store that we're processing
-                if (txRef) {
-                    localStorage.setItem('pending_payment', txRef);
-                }
-                
-                // Redirect after 2 seconds
-                setTimeout(() => {
-                    window.location.href = redirectUrl;
-                }, 2000);
-            } else {
-                statusEl.innerText = '❌ Error: No payment URL found';
-                loaderEl.classList.add('hidden');
-                
-                // Close after 3 seconds on error
-                setTimeout(closeWebApp, 3000);
-            }
+        
+        // If command is to close, close immediately
+        if (command === 'close') {
+            showSuccessAndClose();
         }
-
-        // Also check when page becomes visible (user returns from Flutterwave)
-        document.addEventListener('visibilitychange', function() {
-            if (!document.hidden) {
-                checkForReturn();
+        // If we have a redirect URL, proceed with payment
+        else if (redirectUrl) {
+            statusEl.innerText = 'Redirecting to payment gateway...';
+            
+            // Store that we're processing
+            if (txRef) {
+                localStorage.setItem('pending_payment', txRef);
+                sessionStorage.setItem('pending_payment', txRef);
+            }
+            
+            // Redirect after 2 seconds
+            setTimeout(() => {
+                window.location.href = redirectUrl;
+            }, 2000);
+        } else {
+            titleEl.innerText = '❌ Error';
+            statusEl.innerText = 'No payment URL found. Please return to Telegram.';
+            loaderEl.classList.add('hidden');
+            
+            // Close after 3 seconds on error
+            setTimeout(closeWebApp, 3000);
+        }
+        
+        // Listen for messages from the bot (via postMessage)
+        window.addEventListener('message', function(event) {
+            console.log('Received message:', event.data);
+            if (event.data === 'close' || event.data?.command === 'close') {
+                showSuccessAndClose();
             }
         });
+        
+        // Check if we're returning from Flutterwave
+        let returnCheckCount = 0;
+        const returnInterval = setInterval(function() {
+            returnCheckCount++;
+            
+            // If we have a txRef and the URL changed or we have a payment_success in referrer
+            if (txRef && (
+                document.referrer.includes('flutterwave') || 
+                document.referrer.includes('rave') ||
+                window.location.hash.includes('success') ||
+                sessionStorage.getItem('payment_completed') === txRef
+            )) {
+                console.log('Detected return from Flutterwave');
+                sessionStorage.setItem('payment_completed', txRef);
+                showSuccessAndClose();
+                clearInterval(returnInterval);
+            }
+            
+            // Stop checking after 2 minutes
+            if (returnCheckCount > 120) {
+                clearInterval(returnInterval);
+            }
+        }, 1000);
     </script>
 </body>
 </html>
