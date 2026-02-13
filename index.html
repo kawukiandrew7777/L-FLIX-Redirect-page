@@ -51,12 +51,18 @@
         .hidden {
             display: none;
         }
-        .movie-info {
+        .button {
+            background: white;
+            color: #667eea;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: bold;
             margin-top: 20px;
-            padding: 15px;
-            background: rgba(0,0,0,0.2);
-            border-radius: 10px;
-            font-size: 14px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
         }
     </style>
 </head>
@@ -65,9 +71,8 @@
         <h2 id="title">🎬 L-FLIX Premium</h2>
         <div id="loader" class="loader"></div>
         <div id="status" class="status">Connecting to payment gateway...</div>
-        <div id="movieInfo" class="movie-info">
-            <div id="movieTitle"></div>
-        </div>
+        <div id="error" style="display: none; color: #ffcccc; margin-top: 20px;"></div>
+        <a id="returnButton" href="#" style="display: none;" class="button">🔙 Return to Bot</a>
     </div>
 
     <script>
@@ -78,30 +83,6 @@
             tg.expand();
             console.log('Telegram WebApp initialized');
         }
-        
-        // Movie database for daily rotation
-        const movies = [
-            { title: "Dune: Part Three", year: "2026", rating: "★★★★★" },
-            { title: "Avatar: The Way of Water 2", year: "2026", rating: "★★★★½" },
-            { title: "The Batman: Dark Knight Returns", year: "2026", rating: "★★★★½" },
-            { title: "Mission: Impossible 8", year: "2026", rating: "★★★★☆" },
-            { title: "Spider-Man: Beyond the Spider-Verse", year: "2026", rating: "★★★★★" },
-            { title: "John Wick: Chapter 5", year: "2026", rating: "★★★★½" },
-            { title: "Deadpool 3", year: "2026", rating: "★★★★½" },
-            { title: "Captain America: Brave New World", year: "2026", rating: "★★★★☆" }
-        ];
-        
-        // Get daily movie
-        const today = new Date();
-        const dateString = `${today.getFullYear()}-${today.getMonth()}-${today.getDate()}`;
-        let hash = 0;
-        for (let i = 0; i < dateString.length; i++) {
-            hash = ((hash << 5) - hash) + dateString.charCodeAt(i);
-            hash = hash & hash;
-        }
-        const movie = movies[Math.abs(hash) % movies.length];
-        document.getElementById('movieTitle').innerHTML = 
-            `🎬 Today's Feature: <b>${movie.title}</b> (${movie.year}) ${movie.rating}`;
         
         // Get URL parameters
         const urlParams = new URLSearchParams(window.location.search);
@@ -114,6 +95,13 @@
         const titleEl = document.getElementById('title');
         const statusEl = document.getElementById('status');
         const loaderEl = document.getElementById('loader');
+        const errorEl = document.getElementById('error');
+        const returnButton = document.getElementById('returnButton');
+        
+        // Set return URL
+        const BOT_USERNAME = "lflixmanagerBot";
+        const returnUrl = `https://t.me/${BOT_USERNAME}?start=payment_success_${txRef}`;
+        returnButton.href = returnUrl;
         
         // Function to close WebApp
         function closeWebApp() {
@@ -125,21 +113,84 @@
             }
         }
         
-        // If we have a redirect URL, proceed with payment
-        if (redirectUrl) {
-            statusEl.innerText = 'Redirecting to payment gateway...';
+        // Function to redirect to Flutterwave
+        function redirectToFlutterwave() {
+            if (redirectUrl) {
+                statusEl.innerText = 'Redirecting to payment gateway...';
+                
+                // Store tx_ref in localStorage to detect return
+                if (txRef) {
+                    localStorage.setItem('pending_payment', txRef);
+                    sessionStorage.setItem('pending_payment', txRef);
+                }
+                
+                // Redirect to Flutterwave
+                setTimeout(() => {
+                    window.location.href = redirectUrl;
+                }, 1500);
+            }
+        }
+        
+        // Check if we're returning from Flutterwave
+        function checkReturnFromFlutterwave() {
+            // If URL has payment_success or we have tx_ref in localStorage
+            if (window.location.href.includes('payment_success') || 
+                document.referrer.includes('flutterwave') ||
+                sessionStorage.getItem('payment_completed') === txRef) {
+                
+                titleEl.innerText = '✅ Payment Successful!';
+                statusEl.innerText = 'Your payment has been processed successfully.';
+                loaderEl.classList.add('hidden');
+                
+                // Show return button
+                returnButton.style.display = 'inline-block';
+                
+                // Close WebApp after 2 seconds
+                setTimeout(closeWebApp, 2000);
+                return true;
+            }
+            return false;
+        }
+        
+        // Main logic
+        if (checkReturnFromFlutterwave()) {
+            // Already returned from payment
+        } else if (redirectUrl) {
+            redirectToFlutterwave();
             
-            // Redirect after 2 seconds
-            setTimeout(() => {
-                window.location.href = redirectUrl;
-            }, 2000);
+            // Set up return detection
+            let checkCount = 0;
+            const checkInterval = setInterval(() => {
+                checkCount++;
+                
+                // Check if we've returned
+                if (window.location.href.includes('payment_success') || 
+                    document.referrer.includes('flutterwave') ||
+                    sessionStorage.getItem('payment_completed') === txRef) {
+                    
+                    sessionStorage.setItem('payment_completed', txRef);
+                    clearInterval(checkInterval);
+                    checkReturnFromFlutterwave();
+                }
+                
+                // Stop checking after 2 minutes
+                if (checkCount > 120) {
+                    clearInterval(checkInterval);
+                    errorEl.style.display = 'block';
+                    errorEl.innerText = 'Payment is taking too long. Click below to check status.';
+                    returnButton.style.display = 'inline-block';
+                    returnButton.innerText = '📱 Check Payment Status';
+                }
+            }, 1000);
+            
         } else {
             titleEl.innerText = '❌ Error';
-            statusEl.innerText = 'No payment URL found. Please return to Telegram.';
+            statusEl.innerText = 'No payment URL found.';
             loaderEl.classList.add('hidden');
-            
-            // Close after 3 seconds on error
-            setTimeout(closeWebApp, 3000);
+            errorEl.style.display = 'block';
+            errorEl.innerText = 'Please return to Telegram and try again.';
+            returnButton.style.display = 'inline-block';
+            returnButton.innerText = '🔙 Return to Bot';
         }
     </script>
 </body>
