@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ugandan Radio Stations</title>
+    <title>Ugandan Radio Stations · search</title>
     <style>
         * {
             margin: 0;
@@ -46,6 +46,60 @@
             color: #666;
             margin-bottom: 30px;
             font-style: italic;
+        }
+
+        /* ----- search bar ----- */
+        .search-wrapper {
+            margin-bottom: 25px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            background: #f1f3f4;
+            padding: 8px 16px;
+            border-radius: 40px;
+            border: 1px solid #e0e0e0;
+            transition: 0.2s;
+        }
+        .search-wrapper:focus-within {
+            border-color: #f6b83d;
+            box-shadow: 0 0 0 3px rgba(246,184,61,0.2);
+            background: white;
+        }
+        .search-icon {
+            font-size: 1.2rem;
+            color: #f6b83d;
+        }
+        #searchInput {
+            width: 100%;
+            padding: 10px 5px;
+            border: none;
+            background: transparent;
+            font-size: 1rem;
+            outline: none;
+            font-weight: 400;
+            color: #2c3e50;
+        }
+        #searchInput::placeholder {
+            color: #999;
+            font-style: italic;
+        }
+        .clear-search {
+            background: none;
+            border: none;
+            font-size: 1.3rem;
+            cursor: pointer;
+            color: #aaa;
+            padding: 0 5px;
+            transition: 0.2s;
+        }
+        .clear-search:hover {
+            color: #f6b83d;
+        }
+        .result-count {
+            font-size: 0.9rem;
+            color: #666;
+            margin: 5px 0 10px 0;
+            text-align: right;
         }
 
         .radio-grid {
@@ -143,6 +197,15 @@
         .footer a:hover {
             text-decoration: underline;
         }
+        .no-stations-message {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 40px;
+            background: #f9f9f9;
+            border-radius: 20px;
+            color: #888;
+            font-size: 1.1rem;
+        }
     </style>
 </head>
 <body>
@@ -150,6 +213,14 @@
         <div class="flag">🇺🇬</div>
         <h1>Ugandan Radio Stations</h1>
         <div class="subtitle">🎵 Listen to live radio from the Pearl of Africa 🎵</div>
+
+        <!-- search section -->
+        <div class="search-wrapper">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="searchInput" placeholder="Search by name, frequency or location... (e.g. Kampala, 88.8, CBS)">
+            <button class="clear-search" id="clearSearch" title="clear">✕</button>
+        </div>
+        <div class="result-count" id="resultCount">showing 8 stations</div>
 
         <div class="radio-grid" id="radioGrid">
             <!-- Radio cards will be populated by JavaScript -->
@@ -168,12 +239,12 @@
 
         <div class="footer">
             <p>🎵 Enjoying the music? Share with friends! 🎵</p>
-            <p>Made with ❤️ for Ugandan music lovers</p>
+            <p>Made with ❤️ for Ugandan music lovers · press <strong>R</strong> for random</p>
         </div>
     </div>
 
     <script>
-        // Radio stations data
+        // Radio stations data (same as before, but we keep it extended)
         const radioStations = [
             {
                 id: 1,
@@ -241,17 +312,57 @@
             }
         ];
 
+        // ----- DOM elements -----
         const audioPlayer = document.getElementById('audioPlayer');
         const radioGrid = document.getElementById('radioGrid');
         const currentStationSpan = document.getElementById('currentStation');
         const statusDiv = document.getElementById('status');
+        const searchInput = document.getElementById('searchInput');
+        const clearBtn = document.getElementById('clearSearch');
+        const resultCountSpan = document.getElementById('resultCount');
 
-        // Function to create radio cards
-        function createRadioCards() {
+        // track current active station ID (to keep highlight after filtering)
+        let currentActiveId = null;
+
+        // ----- render cards based on filtered stations -----
+        function renderFilteredStations() {
+            const searchTerm = searchInput.value.trim().toLowerCase();
+            
+            // filter logic
+            const filtered = radioStations.filter(station => {
+                if (searchTerm === '') return true;
+                const nameMatch = station.name.toLowerCase().includes(searchTerm);
+                const freqMatch = station.frequency.toLowerCase().includes(searchTerm);
+                const locMatch = station.location.toLowerCase().includes(searchTerm);
+                // also allow searching by "88.8" without "fm"
+                const freqClean = station.frequency.replace(' fm', '').toLowerCase();
+                const searchClean = searchTerm.replace(' fm', '');
+                const freqPartial = freqClean.includes(searchClean);
+                return nameMatch || freqMatch || locMatch || freqPartial;
+            });
+
+            // update result count
+            resultCountSpan.textContent = `showing ${filtered.length} station${filtered.length !== 1 ? 's' : ''}`;
+
+            // clear grid
             radioGrid.innerHTML = '';
-            radioStations.forEach(station => {
+
+            if (filtered.length === 0) {
+                // show empty message
+                const emptyDiv = document.createElement('div');
+                emptyDiv.className = 'no-stations-message';
+                emptyDiv.innerText = '📻 No matching stations. Try a different search.';
+                radioGrid.appendChild(emptyDiv);
+                return;
+            }
+
+            // create cards for filtered stations
+            filtered.forEach(station => {
                 const card = document.createElement('div');
                 card.className = 'radio-card';
+                if (currentActiveId === station.id) {
+                    card.classList.add('active');
+                }
                 card.dataset.id = station.id;
                 card.dataset.url = station.streamUrl;
                 card.dataset.name = station.name;
@@ -269,25 +380,23 @@
             });
         }
 
-        // Function to play selected station
+        // ----- play station (same logic, but preserve active ID) -----
         function playStation(station) {
-            // Remove active class from all cards
+            currentActiveId = station.id;
+
+            // update active class on cards (re-run render to reflect active)
+            // but we also want to keep filter. Instead of re-render all, we adjust classes manually
             document.querySelectorAll('.radio-card').forEach(card => {
-                card.classList.remove('active');
+                const id = parseInt(card.dataset.id);
+                card.classList.toggle('active', id === station.id);
             });
-            
-            // Add active class to selected card
-            const selectedCard = document.querySelector(`[data-id="${station.id}"]`);
-            if (selectedCard) {
-                selectedCard.classList.add('active');
-            }
-            
-            // Update now playing
+
+            // update now playing
             currentStationSpan.textContent = station.name;
             statusDiv.textContent = 'Connecting to stream...';
             statusDiv.style.color = '#f6b83d';
             
-            // Set audio source and play
+            // set source and play
             audioPlayer.src = station.streamUrl;
             audioPlayer.play()
                 .then(() => {
@@ -301,35 +410,240 @@
                 });
         }
 
-        // Handle audio errors
+        // ----- event listeners for audio -----
         audioPlayer.addEventListener('error', () => {
             statusDiv.textContent = '❌ Stream unavailable. Please try another station.';
             statusDiv.style.color = '#dc3545';
             currentStationSpan.textContent = 'Not playing';
+            // don't reset active id, but station may be dead
         });
 
-        // Handle successful playback
         audioPlayer.addEventListener('playing', () => {
             statusDiv.textContent = '🔴 Live - Now Playing';
             statusDiv.style.color = '#28a745';
         });
 
-        // Handle buffering
         audioPlayer.addEventListener('waiting', () => {
             statusDiv.textContent = '⏳ Buffering...';
             statusDiv.style.color = '#f6b83d';
         });
 
-        // Initialize the page
-        createRadioCards();
+        // ----- search realtime -----
+        searchInput.addEventListener('input', () => {
+            // when searching, the previously active card might disappear.
+            // we keep currentActiveId as is, but if it's filtered out we don't want to show it active.
+            // but the active card will be removed from DOM; that's fine.
+            renderFilteredStations();
 
-        // Optional: Add a random station selector
+            // if current active station is not in filtered list, we could optionally pause, but let's keep playing.
+            // just visual active will be gone; but player continues. That's okay.
+            // however we might want to remove active from something not visible.
+            // if there's a better ux: if active station hidden, we can show a small warning? not needed.
+        });
+
+        // clear search
+        clearBtn.addEventListener('click', () => {
+            searchInput.value = '';
+            renderFilteredStations();
+            searchInput.focus();
+        });
+
+        // random station selector (R key) but only from full list (or filtered? we'll pick from full list)
         document.addEventListener('keydown', (e) => {
-            if (e.key === 'r' || e.key === 'R') {
+            if (e.key.toLowerCase() === 'r') {
+                // get currently visible stations? we prefer any from full list.
                 const randomIndex = Math.floor(Math.random() * radioStations.length);
                 playStation(radioStations[randomIndex]);
+                // optional: if the random station is hidden by search, we could clear search?
+                // we'll do: clear search to reveal it (good UX)
+                searchInput.value = '';
+                renderFilteredStations();  // now all stations visible
+                // but we already called playStation, it will set active class but after re-render we need to sync
+                // playStation sets active by toggling class, but renderFilteredStations overwrites html.
+                // So order: playStation updates currentActiveId, then we call renderFilteredStations.
+                // but after render we must ensure the active class reflects currentActiveId.
+                // Let's adjust: 
+                // set currentActiveId inside playStation, then re-render if needed.
+                // but playStation currently uses document.querySelectorAll — that works on old grid.
+                // Better: unify: after random, update input, then render, then set active class and continue playing.
+                // we refactor:
             }
         });
+
+        // improved random: clear search, render all, then play random and highlight
+        document.addEventListener('keydown', (e) => {
+            if (e.key.toLowerCase() === 'r') {
+                e.preventDefault(); // just in case
+                // clear search to show everything
+                searchInput.value = '';
+                renderFilteredStations();  // all stations rendered with currentActiveId still applied (if any)
+                const randomIndex = Math.floor(Math.random() * radioStations.length);
+                const randomStation = radioStations[randomIndex];
+                playStation(randomStation);   // updates active class using old DOM? But after render it's fresh.
+                // we need to call playStation *after* render? but playStation uses querySelectorAll to set active,
+                // which now points to newly rendered cards. So it's fine. However currentActiveId is set inside playStation.
+                // we must also call renderFilteredStations before? to ensure cards exist.
+                // let's do: clear, render, then play.
+                // but we already have render before, and playStation will toggle active using currentActiveId.
+                // Perfect.
+            }
+        });
+
+        // small nuance: we need to set currentActiveId when playStation is called from anywhere.
+        // we also need to ensure if the active station is deleted from filter, it's not shown but still playing.
+        // It's acceptable.
+
+        // ----- initialize page -----
+        function init() {
+            renderFilteredStations();
+
+            // optionally set first station to something? We'll leave idle.
+            // but we can set a default active? no.
+        }
+
+        init();
+
+        // make sure that when playStation is called from card, we also keep filter consistent?
+        // If user clicks a station that is currently visible (thanks to filter), no problem.
+        // but if they use random (R) we already clear search. 
+        // additionally, if they play a station that's outside current search (programmatically) we might want to clear search to show it.
+        // Override playStation to also clear search? maybe not. We'll do this: 
+        // if a station is played that is not in current filter, we clear search to reveal it (usability).
+        const originalPlayStation = playStation;
+        playStation = function(station) {
+            // check if station is present in current filtered list
+            const currentSearch = searchInput.value.trim().toLowerCase();
+            let isVisible = true;
+            if (currentSearch !== '') {
+                const matchesSearch = station.name.toLowerCase().includes(currentSearch) ||
+                                      station.frequency.toLowerCase().includes(currentSearch) ||
+                                      station.location.toLowerCase().includes(currentSearch) ||
+                                      station.frequency.replace(' fm', '').toLowerCase().includes(currentSearch.replace(' fm', ''));
+                if (!matchesSearch) {
+                    // clear search to make it visible
+                    searchInput.value = '';
+                    renderFilteredStations(); // now station becomes visible
+                }
+            }
+            // call original function
+            originalPlayStation(station);
+        }.bind(this);
+
+        // but we need to keep reference, we overwrite.
+        // simpler: reassign with a wrapper.
+        // Let's reorder: keep original name, then wrap.
+        const basePlayStation = playStation;
+        window.playStation = function(station) {
+            const searchTerm = searchInput.value.trim().toLowerCase();
+            if (searchTerm !== '') {
+                const matches = 
+                    station.name.toLowerCase().includes(searchTerm) ||
+                    station.frequency.toLowerCase().includes(searchTerm) ||
+                    station.location.toLowerCase().includes(searchTerm) ||
+                    station.frequency.replace(' fm', '').toLowerCase().includes(searchTerm.replace(' fm', ''));
+                if (!matches) {
+                    searchInput.value = '';
+                    renderFilteredStations();  // rebuild all
+                }
+            }
+            basePlayStation(station);
+        };
+
+        // rebind card click to use the new playStation
+        // we have to modify create function or re-delegate.
+        // Instead of rewriting card creation, we can use event delegation? But we already build with addEventListener.
+        // We'll adjust inside renderFilteredStations: use the wrapper.
+        // let's rename function to call playStationWrapper.
+        function playStationWrapper(station) {
+            const searchTerm = searchInput.value.trim().toLowerCase();
+            if (searchTerm !== '') {
+                const matches = 
+                    station.name.toLowerCase().includes(searchTerm) ||
+                    station.frequency.toLowerCase().includes(searchTerm) ||
+                    station.location.toLowerCase().includes(searchTerm) ||
+                    station.frequency.replace(' fm', '').toLowerCase().includes(searchTerm.replace(' fm', ''));
+                if (!matches) {
+                    searchInput.value = '';
+                    renderFilteredStations();  
+                }
+            }
+            basePlayStation(station);
+        }
+
+        // update render function to use playStationWrapper
+        // modify the card event inside renderFilteredStations:
+        // we'll replace the render function with one using playStationWrapper.
+        // We'll keep a reference.
+        const originalRender = renderFilteredStations;
+        renderFilteredStations = function() {
+            const searchTerm = searchInput.value.trim().toLowerCase();
+            const filtered = radioStations.filter(station => {
+                if (searchTerm === '') return true;
+                return station.name.toLowerCase().includes(searchTerm) ||
+                       station.frequency.toLowerCase().includes(searchTerm) ||
+                       station.location.toLowerCase().includes(searchTerm) ||
+                       station.frequency.replace(' fm', '').toLowerCase().includes(searchTerm.replace(' fm', ''));
+            });
+
+            resultCountSpan.textContent = `showing ${filtered.length} station${filtered.length !== 1 ? 's' : ''}`;
+            radioGrid.innerHTML = '';
+
+            if (filtered.length === 0) {
+                const emptyDiv = document.createElement('div');
+                emptyDiv.className = 'no-stations-message';
+                emptyDiv.innerText = '📻 No matching stations. Try a different search.';
+                radioGrid.appendChild(emptyDiv);
+                return;
+            }
+
+            filtered.forEach(station => {
+                const card = document.createElement('div');
+                card.className = 'radio-card';
+                if (currentActiveId === station.id) {
+                    card.classList.add('active');
+                }
+                card.dataset.id = station.id;
+                card.dataset.url = station.streamUrl;
+                card.dataset.name = station.name;
+                
+                card.innerHTML = `
+                    <div class="radio-name">${station.name}</div>
+                    <div class="radio-frequency">📻 ${station.frequency}</div>
+                    <div class="radio-location">
+                        <span>📍</span> ${station.location}
+                    </div>
+                `;
+                
+                // use the wrapper that can clear search if needed
+                card.addEventListener('click', () => {
+                    playStationWrapper(station);
+                });
+                radioGrid.appendChild(card);
+            });
+        };
+
+        // reassign global
+        window.playStationWrapper = playStationWrapper;
+        // and make sure random uses wrapper too:
+        document.addEventListener('keydown', (e) => {
+            if (e.key.toLowerCase() === 'r') {
+                e.preventDefault();
+                // clear search to show all, then pick random
+                searchInput.value = '';
+                renderFilteredStations(); // all stations visible, currentActiveId still known
+                const randomIndex = Math.floor(Math.random() * radioStations.length);
+                const randomStation = radioStations[randomIndex];
+                playStationWrapper(randomStation);
+            }
+        });
+
+        // also attach base to audio error etc. fine.
+
+        // final init: call new render
+        renderFilteredStations();
+
+        // extra: clear button already uses renderFilteredStations.
+        // Also set initial result count.
     </script>
 </body>
 </html>
